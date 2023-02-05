@@ -1,9 +1,14 @@
 import irc, { IMessage } from 'irc';
+import dotenv from 'dotenv';
+
+dotenv.config({ path: './.env' });
+
+const { NAME: userName, SERVER: server, PORT } = process.env;
+const port = parseInt(PORT) || 6697;
 
 const config: irc.IClientOpts = {
-  port: 6697,
-  userName: 'John_McCorthy',
-  realName: 'Referee John McCorthy',
+  port,
+  userName,
   localAddress: undefined,
   debug: true,
   showErrors: false,
@@ -24,9 +29,9 @@ const config: irc.IClientOpts = {
   encoding: '',
 };
 
-let channel = '';
+const channel = `#${process.env.CHANNEL}`;
 
-const bot = new irc.Client('irc.libera.chat', 'John_McCorthy', config);
+const bot = new irc.Client(server, userName, config);
 
 bot.addListener('end', (message) => {
   console.log('end event raised: ', message);
@@ -48,6 +53,6 @@ bot.addListener(
 
 bot.addListener('registered', function (...args: string[]) {
   console.log(args);
-  channel = '#John_McCorthy_Test';
+  console.log(`Logging to ${channel}. Please wait...`);
   bot.join(channel);
 });

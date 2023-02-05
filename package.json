@@ -37,6 +37,7 @@
   "author": "Jakub Synowiec <jsynowiec@users.noreply.github.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "dotenv": "^16.0.3",
     "irc": "^0.5.2",
     "tslib": "~2.4"
   },

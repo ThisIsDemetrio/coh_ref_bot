@@ -12,6 +12,10 @@ coverage
 # Transpiled files
 build/
 
+# Environment Variables files (except default.env)
+.env
+!default.env
+
 # VS Code
 .vscode
 !.vscode/tasks.js
