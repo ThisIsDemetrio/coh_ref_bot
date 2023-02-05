@@ -1,34 +1,53 @@
-/**
- * Some predefined delay values (in milliseconds).
- */
-export enum Delays {
-  Short = 500,
-  Medium = 2000,
-  Long = 5000,
-}
+import irc, { IMessage } from 'irc';
 
-/**
- * Returns a Promise<string> that resolves after a given time.
- *
- * @param {string} name - A name.
- * @param {number=} [delay=Delays.Medium] - A number of milliseconds to delay resolution of the Promise.
- * @returns {Promise<string>}
- */
-function delayedHello(
-  name: string,
-  delay: number = Delays.Medium,
-): Promise<string> {
-  return new Promise((resolve: (value?: string) => void) =>
-    setTimeout(() => resolve(`Hello, ${name}`), delay),
-  );
-}
+const config: irc.IClientOpts = {
+  port: 6697,
+  userName: 'John_McCorthy',
+  realName: 'Referee John McCorthy',
+  localAddress: undefined,
+  debug: true,
+  showErrors: false,
+  autoRejoin: false,
+  autoConnect: true,
+  channels: [],
+  secure: true,
+  selfSigned: true,
+  certExpired: false,
+  floodProtection: true,
+  floodProtectionDelay: 500,
+  sasl: false,
+  retryCount: 0,
+  retryDelay: 10000,
+  stripColors: false,
+  channelPrefixes: '#',
+  messageSplit: 512,
+  encoding: '',
+};
 
-// Please see the comment in the .eslintrc.json file about the suppressed rule!
-// Below is an example of how to use ESLint errors suppression. You can read more
-// at https://eslint.org/docs/latest/user-guide/configuring/rules#disabling-rules
+let channel = '';
 
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-export async function greeter(name: any) { // eslint-disable-line @typescript-eslint/no-explicit-any
-  // The name parameter should be of type string. Any is used only to trigger the rule.
-  return await delayedHello(name, Delays.Long);
-}
+const bot = new irc.Client('irc.libera.chat', 'John_McCorthy', config);
+
+bot.addListener('end', (message) => {
+  console.log('end event raised: ', message);
+});
+
+bot.addListener('close', (message: string) => {
+  console.log('close event raised: ', message);
+});
+
+bot.addListener(
+  'message',
+  (from: string, to: string, text: string, message: IMessage) => {
+    console.log({ from });
+    console.log({ to });
+    console.log({ text });
+    console.log({ message });
+  },
+);
+
+bot.addListener('registered', function (...args: string[]) {
+  console.log(args);
+  channel = '#John_McCorthy_Test';
+  bot.join(channel);
+});
