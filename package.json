@@ -1,12 +1,13 @@
 {
-  "name": "node-typescript-boilerplate",
+  "name": "coh_ref_bot",
   "version": "0.0.0",
-  "description": "Minimalistic boilerplate to quick-start Node.js development in TypeScript.",
+  "description": "A bot that works as a referee for Chat of Honor quizzes.",
   "type": "module",
   "engines": {
     "node": ">= 18.12 <19"
   },
   "devDependencies": {
+    "@types/irc": "^0.5.1",
     "@types/jest": "~29.2",
     "@types/node": "~18",
     "@typescript-eslint/eslint-plugin": "~5.44",
@@ -36,6 +37,7 @@
   "author": "Jakub Synowiec <jsynowiec@users.noreply.github.com>",
   "license": "Apache-2.0",
   "dependencies": {
+    "irc": "^0.5.2",
     "tslib": "~2.4"
   },
   "volta": {
