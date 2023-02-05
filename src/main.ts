@@ -3,16 +3,18 @@ import dotenv from 'dotenv';
 
 dotenv.config({ path: './.env' });
 
-const { NAME: userName, SERVER: server, PORT } = process.env;
+const { DEBUG, NAME: userName, SERVER: server, PORT } = process.env;
+
+const debug = !!DEBUG;
 const port = parseInt(PORT) || 6697;
 
 const config: irc.IClientOpts = {
   port,
   userName,
   localAddress: undefined,
-  debug: true,
+  debug,
   showErrors: false,
-  autoRejoin: false,
+  autoRejoin: true,
   autoConnect: true,
   channels: [],
   secure: true,
