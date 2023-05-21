@@ -33,6 +33,8 @@ const config: irc.IClientOpts = {
 
 const channel = `#${process.env.CHANNEL}`;
 
+// TODO: Transform into a class to be activated only if required
+// 		 (we might want to use simple console.log for simplify the integration test)
 const bot = new irc.Client(server, userName, config);
 
 bot.addListener('end', (message) => {
