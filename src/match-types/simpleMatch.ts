@@ -1,65 +1,109 @@
-import { AnswerResult, evaluateAnswer } from '../logic/evaluateAnswer.js';
+import { PositiveNumber } from '../../__tests__/types.js';
+import {
+	AnswerResult,
+	CORRECT,
+	CORRECT_PLUS_ONE,
+	INACCURATE,
+	WRONG,
+	WRONG_BY_TOO_MANY_INACCURACIES,
+	evaluateAnswer,
+} from '../logic/evaluateAnswer.js';
 
 type ScoreSheet = Record<string, number>;
+
+export type Rules = {
+	pointsNeeded: PositiveNumber;
+	inaccuraciesAllowed: PositiveNumber;
+};
 
 type QuestionData = {
 	question: string;
 	expectedAnswer: string;
-	givenAnswers: { answer: string; from: string }[];
+	givenAnswers: { answer: string; from: string; is: AnswerResult }[];
 	isCanceled: boolean;
-	isCorrectAnswer: boolean;
+	answeredCorrectly: boolean;
+	answeredBy?: string;
 };
 
 type MatchHistory = QuestionData[];
 
-// TODO: Add a state to make sure we're expecting a question or an answer, or whatever
 export class SimpleMatch {
-	score: ScoreSheet = {};
-	currentQuestion: QuestionData;
-	matchHistory: MatchHistory = [];
+	private _rules: Rules;
+	private _score: ScoreSheet = {};
+	private _currentQuestion: QuestionData;
+	private _matchHistory: MatchHistory = [];
 
-	constructor(participants: string[]) {
-		participants.forEach((participant) => (this.score[participant] = 0));
+	get score(): ScoreSheet {
+		return this._score;
 	}
 
-	getCurrentResult(): string {
-		return Object.entries(this.score)
-			.map(([participant, points]) => `${participant}: ${points}`)
-			.join(', ');
+	constructor(rules: Rules) {
+		this._rules = rules;
+	}
+
+	addParticipants(participants: string[]): void {
+		participants.forEach((participant) => (this._score[participant] = 0));
 	}
 
 	askQuestion(question: string, expectedAnswer: string): void {
-		this.currentQuestion = {
+		this._currentQuestion = {
 			question,
-			expectedAnswer,
+			expectedAnswer: expectedAnswer.toLowerCase(),
 			givenAnswers: [],
 			isCanceled: false,
-			isCorrectAnswer: false,
+			answeredCorrectly: false,
 		};
 	}
 
-	cancelQuestion(): void {
-		this.currentQuestion.isCanceled = true;
-		this.matchHistory.push(this.currentQuestion);
-		this.currentQuestion = null;
+	private archiveQuestion(): void {
+		this._matchHistory.push(this._currentQuestion);
+		this._currentQuestion = null;
 	}
 
-	receiveAndEvaluateAnswer(answer: string, from: string): AnswerResult {
-		this.currentQuestion.givenAnswers.push({ answer, from });
+	cancelQuestion(): void {
+		this._currentQuestion.isCanceled = true;
+		this.archiveQuestion();
+	}
 
-		const answerEvaluation = evaluateAnswer(answer, this.currentQuestion.expectedAnswer);
-		if (['VALID', 'VALID+1'].includes(answerEvaluation)) {
-			this.currentQuestion.isCorrectAnswer = true;
-			this.matchHistory.push(this.currentQuestion);
-			this.currentQuestion = null;
+	receiveAndEvaluateAnswer(answer: string, from: string): AnswerResult | null {
+		if (!this._currentQuestion) return null;
+		const { inaccuraciesAllowed } = this._rules;
+
+		const noInaccuracies =
+			this._currentQuestion.givenAnswers.filter((answer) => answer.from === from).length === inaccuraciesAllowed;
+		const answerEvaluation = evaluateAnswer(answer, this._currentQuestion.expectedAnswer, { noInaccuracies });
+
+		switch (answerEvaluation) {
+			case CORRECT:
+			case CORRECT_PLUS_ONE:
+				this._score[from] += 1;
+				this._currentQuestion.answeredCorrectly = true;
+				this._currentQuestion.answeredBy = from;
+				this._currentQuestion.givenAnswers.push({ answer, from, is: answerEvaluation });
+				this._matchHistory.push(this._currentQuestion);
+				this._currentQuestion = null;
+				break;
+			case INACCURATE:
+				this._currentQuestion.givenAnswers.push({ answer, from, is: answerEvaluation });
+				break;
+			case WRONG_BY_TOO_MANY_INACCURACIES:
+			case WRONG: {
+				const otherParticipant = Object.keys(this._score).find((participant) => participant !== from);
+				this._score[otherParticipant] += 1;
+				this._currentQuestion.answeredCorrectly = false;
+				this._currentQuestion.givenAnswers.push({ answer, from, is: answerEvaluation });
+				this.archiveQuestion();
+				break;
+			}
+			default:
+				throw new Error(`Unexpected case: ${answerEvaluation}`);
 		}
-
 		return answerEvaluation;
 	}
 
 	getWinner(): string | undefined {
-		const [participant, points] = Object.entries(this.score).find(([, points]) => points === 5);
-
+		const { pointsNeeded } = this._rules;
+		const [participant] = Object.entries(this._score).find(([, points]) => points === pointsNeeded) || [];
 		return participant;
 	}
 }

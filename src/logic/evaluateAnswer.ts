@@ -1,4 +1,15 @@
-export type AnswerResult = 'VALID' | 'VALID+1' | 'NONVALID' | 'INACCURATE';
+export const CORRECT = 'CORRECT';
+export const CORRECT_PLUS_ONE = 'CORRECT_PLUS_ONE';
+export const WRONG = 'WRONG';
+export const INACCURATE = 'INACCURATE';
+export const WRONG_BY_TOO_MANY_INACCURACIES = 'WRONG_BY_THIRD_INACCURACY';
+
+export type AnswerResult =
+	| typeof CORRECT
+	| typeof CORRECT_PLUS_ONE
+	| typeof WRONG
+	| typeof INACCURATE
+	| typeof WRONG_BY_TOO_MANY_INACCURACIES;
 
 const isNumericAnswer = (str: string): boolean => !Number.isNaN(parseInt(str));
 const containsUppercase = (str: string): boolean => /[A-Z]/.test(str);
@@ -28,22 +39,26 @@ function isOneCharMore(str1: string, str2: string): boolean {
 	return diffCount === 1; // Return true if exactly one difference is found.
 }
 
-export function evaluateAnswer(answer: string, expectedAnswer: string): AnswerResult {
+export type EvaluateAnswerOptions = { noInaccuracies: boolean };
+
+export function evaluateAnswer(answer: string, expectedAnswer: string, options?: EvaluateAnswerOptions): AnswerResult {
+	const { noInaccuracies = false } = options || {};
+
 	const cleanAnswer = answer.trim();
 	const isNumber = isNumericAnswer(expectedAnswer);
 
 	if (isNumber) {
-		return cleanAnswer === expectedAnswer ? 'VALID' : 'NONVALID';
+		return cleanAnswer === expectedAnswer ? CORRECT : WRONG;
 	}
 
 	// If the string is the same and has uppercase letters, return INACCURATE
 	if (containsUppercase(cleanAnswer) && cleanAnswer.toLowerCase() === expectedAnswer) {
-		return 'INACCURATE';
+		return noInaccuracies ? WRONG_BY_TOO_MANY_INACCURACIES : INACCURATE;
 	}
 
 	if (isOneCharMore(cleanAnswer, expectedAnswer)) {
-		return 'VALID+1';
+		return CORRECT_PLUS_ONE;
 	}
 
-	return cleanAnswer === expectedAnswer ? 'VALID' : 'NONVALID';
+	return cleanAnswer === expectedAnswer ? CORRECT : WRONG;
 }
